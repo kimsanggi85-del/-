@@ -331,6 +331,11 @@ function updateMonthlyQty(id,val){
   orders=orders.map(o=>o.id===id?{...o,monthlyQty:val||0}:o);
   renderStats();
 }
+function updateQty(id,val){
+  orders=orders.map(o=>o.id===id?{...o,qty:val||0}:o);
+  renderStats();
+  if(currentTab==="gantt") renderGantt();
+}
 
 function render(){
   renderStats();
@@ -424,7 +429,7 @@ function renderList(){
       <td><span onclick="statusCycle(${o.id})" style="font-size:10px;padding:3px 8px;border-radius:3px;cursor:pointer;background:${st.bg};color:${st.color};font-weight:700;">${st.label}</span></td>
       <td style="font-weight:600;color:#ddd;">${o.orderNo}</td>
       <td><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${c};margin-right:6px;"></span>${o.product}</td>
-      <td style="text-align:right;font-weight:600;">${o.qty.toLocaleString()} ${o.unit}</td>
+      <td style="text-align:right;"><input type="number" value="${o.qty}" onchange="updateQty(${o.id},Number(this.value))" style="width:75px;padding:4px 6px;background:#0d0d1a;border:1px solid #333;border-radius:4px;color:#e0e0e0;font-size:12px;font-weight:600;text-align:right;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#333'"/> <span style="font-size:10px;color:#666;">${o.unit}</span></td>
       <td style="text-align:right;"><input type="number" value="${o.monthlyQty||0}" onchange="updateMonthlyQty(${o.id},Number(this.value))" style="width:80px;padding:4px 6px;background:#0d0d1a;border:1px solid #333;border-radius:4px;color:#d97706;font-size:12px;font-weight:600;text-align:right;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#d97706'" onblur="this.style.borderColor='#333'"/></td>
       <td style="color:#999;">${o.line}</td>
       <td style="color:#999;">${info.equipment||"-"}</td>
