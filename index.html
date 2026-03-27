@@ -60,6 +60,7 @@
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
     <select id="filter-line" class="input-base" style="width:110px;padding:6px 8px;font-size:12px;"></select>
     <select id="filter-status" class="input-base" style="width:100px;padding:6px 8px;font-size:12px;"></select>
+    <button class="btn-secondary" style="padding:7px 16px;font-size:12px;" onclick="openLineModal()">⚙ 라인 관리</button>
     <button class="btn-primary" style="padding:7px 16px;font-size:12px;" onclick="openNew()">+ 계획 추가</button>
   </div>
 </div>
@@ -128,8 +129,23 @@
   </div>
 </div>
 
+<div id="line-modal-overlay" style="display:none;position:fixed;inset:0;z-index:1100;align-items:center;justify-content:center;">
+  <div style="position:absolute;inset:0;background:rgba(0,0,0,.45);" onclick="closeLineModal()"></div>
+  <div style="position:relative;background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:24px;min-width:360px;max-width:480px;max-height:85vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.5);width:90%;">
+    <div class="modal-header">
+      <h3 class="modal-title">라인 관리</h3>
+      <button class="modal-close" onclick="closeLineModal()">✕</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <input class="input-base" id="new-line-name" placeholder="라인명 입력 (예: LINE-6)" style="flex:1;" onkeydown="if(event.key==='Enter')addLine()"/>
+      <button class="btn-primary" style="padding:8px 16px;white-space:nowrap;" onclick="addLine()">+ 추가</button>
+    </div>
+    <div id="line-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+  </div>
+</div>
+
 <script>
-const LINES = ["LINE-1","LINE-2","LINE-3","LINE-4","LINE-5"];
+let LINES = ["LINE-1","LINE-2","LINE-3","LINE-4","LINE-5"];
 const STATUS_MAP = {
   planned:    { label:"계획",   color:"#3b82f6", bg:"#dbeafe" },
   confirmed:  { label:"확정",   color:"#059669", bg:"#d1fae5" },
@@ -412,6 +428,53 @@ function renderLoad(){
       <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;">${chips}</div>
     </div>`;
   }).join("");
+}
+
+function openLineModal(){
+  document.getElementById("line-modal-overlay").style.display="flex";
+  document.getElementById("new-line-name").value="";
+  renderLineList();
+}
+function closeLineModal(){ document.getElementById("line-modal-overlay").style.display="none"; }
+function renderLineList(){
+  const el=document.getElementById("line-list");
+  el.innerHTML=LINES.map((l,i)=>{
+    const cnt=orders.filter(o=>o.line===l).length;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#13132a;border:1px solid #222;border-radius:6px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:13px;font-weight:700;color:#ddd;letter-spacing:.5px;">${l}</span>
+        <span style="font-size:10px;color:#666;">${cnt}건 배정</span>
+      </div>
+      <button onclick="removeLine(${i})" style="background:none;border:none;color:${cnt>0?'#444':'#f87171'};cursor:${cnt>0?'not-allowed':'pointer'};font-size:18px;" ${cnt>0?'disabled title="배정된 계획이 있어 삭제 불가"':'title="삭제"'}>✕</button>
+    </div>`;
+  }).join("");
+}
+function addLine(){
+  const inp=document.getElementById("new-line-name");
+  const name=inp.value.trim().toUpperCase();
+  if(!name){ alert("라인명을 입력하세요."); return; }
+  if(LINES.includes(name)){ alert("이미 존재하는 라인입니다."); return; }
+  LINES.push(name);
+  inp.value="";
+  refreshLineSelects();
+  renderLineList();
+  render();
+}
+function removeLine(idx){
+  const line=LINES[idx];
+  if(orders.some(o=>o.line===line)){ alert("해당 라인에 배정된 계획이 있어 삭제할 수 없습니다."); return; }
+  if(!confirm(`"${line}" 라인을 삭제하시겠습니까?`)) return;
+  LINES.splice(idx,1);
+  refreshLineSelects();
+  renderLineList();
+  render();
+}
+function refreshLineSelects(){
+  const fl=document.getElementById("filter-line");
+  const curFilter=fl.value;
+  fl.innerHTML=`<option value="ALL">전체 라인</option>`+LINES.map(l=>`<option value="${l}">${l}</option>`).join("");
+  if(LINES.includes(curFilter)||curFilter==="ALL") fl.value=curFilter; else { fl.value="ALL"; filterLine="ALL"; }
+  document.getElementById("f-line").innerHTML=LINES.map(l=>`<option>${l}</option>`).join("");
 }
 
 initSelects();
